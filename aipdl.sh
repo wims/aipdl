@@ -1,13 +1,14 @@
 #!/bin/bash 
-
+parameter=$1
 base_url="https://ais.avinor.no/no/AIP/"
 version="view/"
 
 airport_list=()
+chart_name=""
 
 
 function get_airport_list() {
-    echo "DEBUG: get_airport_list()"
+    echo "*** DEBUG: get_airport_list()"
 
     wget -U "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" "https://ais.avinor.no/no/AIP/view/112/2022-03-24-AIRAC/html/eAIP/EN-AD-0.6-no-NO.html"
 
@@ -31,7 +32,7 @@ function get_airport_list() {
 }
 
 function get_airport_url() {
-    echo "DEBUG: get_airport_url()"
+    echo "*** DEBUG: get_airport_url()"
     get_airport_list
     airport_url=""
     for airport in ${airport_list[@]}; do
@@ -44,28 +45,60 @@ function get_airport_url() {
     done
 }
 
+function get_chart_name() {
+    echo "*** DEBUG: get_chart_name()"
+    chart_name=$(xmllint --html --xpath "$chart_name_params" EN-AD-2.ENGM-no-NO.html 2> /dev/null)
+    #echo "return_string=$return_string"
+}
+
+function get_chart_code() {
+    echo "*** DEBUG: get_chart_code()"
+    chart_code=""
+    chart_code=$(xmllint --html --xpath "$chart_code_params" EN-AD-2.ENGM-no-NO.html 2> /dev/null)
+}
+
+function get_chart_filename() {
+    echo "*** DEBUG: get_chart_filename()"
+    chart_filename=""
+    chart_filename=$(xmllint --html --xpath "$chart_filename_params" EN-AD-2.ENGM-no-NO.html 2> /dev/null)
+}
+
+function get_meta_data() {
+    echo "*** DEBUG: get_meta_data()"
+    
+
+}
+
 function get_ground_charts() {
-    echo "DEBUG: get_ground_charts()"
+    echo "*** DEBUG: get_ground_charts()"
     index=1
     while :
     do
-        declare "start_string=(xmllint --html --xpath \"string(//html/body/div[2]/div[24]/table/tbody/tr[$index]/td/p)\" EN-AD-2.ENGM-no-NO.html 2> /dev/null)"
-        echo "start string = ${start_string[@]}"
-        return_string=$(${start_string[@]})
-        #echo "return string = $return_string"
+        chart_name_params="string(//html/body/div[2]/div[24]/table/tbody/tr[$index]/td[1]/p)"
+        get_chart_name $chart_name_params
+
+        chart_code_params="string(//html/body/div[2]/div[24]/table/tbody/tr[$index]/td[2]/a)"
+        get_chart_code $chart_code_params
+
+        chart_filename_params="string(//html/body/div[2]/div[24]/table/tbody/tr[$index]/td[2]/a/@href)"
+        get_chart_filename $chart_filename_params
+        
+
         index=$(( $index + 1 ))
-        if [ "$return_string" == "" ] 
+        if [ "$chart_name" == "" ] 
         then 
             break
         else
-            echo "return string = $return_string"
+            echo "chart name = $chart_name"
+            echo "chart code = $chart_code"
+            echo "chart fn   = $chart_filename"
             #airport_list+=($return_string)
         fi
     done
 }
 
 function download_airport_charts() {
-    echo "DEBUG: download_airport_charts()"
+    echo "*** DEBUG: download_airport_charts()"
     get_airport_url $1
     echo "Airport url = $airport_url"
     wget -U "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" "$airport_url"
