@@ -85,9 +85,54 @@ function get_ground_charts() {
             echo "chart name = $chart_name"
             echo "chart code = $chart_code"
             echo "chart fn   = $chart_filename"
+            download_chart $chart_name $chart_code $chart_filename
             #airport_list+=($return_string)
         fi
     done
+}
+
+function download_chart() {
+    echo "*** DEBUG: download_chart()"
+    if [ -d "$parameter" ]; then
+        echo "Directory $parameter exists!"
+    else
+        echo "Directory $parameter does not exist, creating"
+        mkdir $parameter
+    fi
+    if [[ ${chart_code:13:1} == "2" ]]; then
+        subdir="Ground"
+    elif [[ ${chart_code:13:1} == "3" ]]; then
+        subdir="STAR"
+    elif [[ ${chart_code:13:1} == "4" ]]; then
+        subdir="SID"
+    elif [[ ${chart_code:13:1} == "5" ]]; then
+        subdir="Approach"
+    elif [[ ${chart_code:13:1} == "6" ]]; then
+        subdir="Visual"
+    else 
+        subdir="Area"
+    fi
+
+    echo "Subdir = $subdir"
+
+    local_file_name=${chart_filename:5}
+    echo "local_file_name = $local_file_name"
+    local_chart_name=$(echo $chart_name | awk '{$1=$1;print}')
+    echo "local_chart_name = $local_chart_name"
+
+    cd $parameter
+    if [ ! -d $subdir ]; then
+        mkdir $subdir
+    fi
+
+    chart_url=$(echo $versioned_url"/"$date"-AIRAC"$local_file_name)
+
+    echo "chart url = $chart_url"
+
+    cd $subdir
+        wget -U "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" -O $local_chart_name $chart_url
+    cd ../..
+
 }
 
 function download_airport_charts() {
