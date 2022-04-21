@@ -3,6 +3,7 @@ parameter=$1
 airport_list=()
 
 
+
 # Downloads list of airports
 function get_airport_list() {
     echo "*** DEBUG: get_airport_list()"
