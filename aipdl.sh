@@ -59,7 +59,7 @@ function get_chart_code() {
 function get_chart_filename() {
     echo "*** DEBUG: get_chart_filename()"
     chart_filename=""
-    chart_filename=$(xmllint --html --xpath "$chart_filename_params" "EN-AD-2.$parameter-no-NO.html" )
+    chart_filename=$(xmllint --html --xpath "$chart_filename_params" "EN-AD-2.$parameter-no-NO.html" 2> /dev/null)
 }
 
 
@@ -100,18 +100,16 @@ function get_ground_charts() {
 
 function download_chart() {
     echo "*** DEBUG: download_chart()"
-    if [ -d "$parameter" ]; then
-        echo "Directory $parameter exists!"
-    else
-        echo "Directory $parameter does not exist, creating"
+    if [ ! -d "$parameter" ]; then
+        #echo "Directory $parameter does not exist, creating"
         mkdir $parameter
     fi
     if [[ ${chart_code:13:1} == "2" ]]; then
         subdir="Ground"
     elif [[ ${chart_code:13:1} == "3" ]]; then
-        subdir="STAR"
+        subdir="Obstacle"
     elif [[ ${chart_code:13:1} == "4" ]]; then
-        subdir="SID"
+        subdir="SIDSTAR"
     elif [[ ${chart_code:13:1} == "5" ]]; then
         subdir="Approach"
     elif [[ ${chart_code:13:1} == "6" ]]; then
@@ -127,6 +125,7 @@ function download_chart() {
     local_chart_name=$(echo $chart_name | awk '{$1=$1;print}')
     local_chart_name="$local_chart_name.pdf"
     local_chart_name="${local_chart_name// /_}"
+    local_chart_name="${local_chart_name////_}"
     echo "local_chart_name = $local_chart_name"
 
     cd $parameter
