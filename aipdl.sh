@@ -1,23 +1,18 @@
 #!/bin/bash 
 parameter=$1
-base_url="https://ais.avinor.no/no/AIP/"
-version="view/"
-
 airport_list=()
-chart_name=""
 
 
+# Downloads list of airports
 function get_airport_list() {
     echo "*** DEBUG: get_airport_list()"
 
     local_airport_list="$version_number"
     local_airport_list+="_AD_LIST"
-    echo "local_airport_list = $local_airport_list"
-
-    wget -U "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" -O $local_airport_list $ad_list 
-
     counter=1
     return_string="-"
+
+    wget -U "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" -O $local_airport_list $ad_list 
 
     while :
     do
@@ -33,8 +28,10 @@ function get_airport_list() {
     done
 }
 
+# Creates URL
 function get_airport_url() {
     echo "*** DEBUG: get_airport_url()"
+
     get_airport_list
     for airport in ${airport_list[@]}; do
         if [[ "$airport" =~ "$parameter" ]] 
@@ -45,9 +42,10 @@ function get_airport_url() {
     done
 }
 
-
+# Extracts chart metadata and calls the download_chart function
 function get_chart_meta_data() {
     echo "*** DEBUG: get_chart_meta_data()"
+
     index=1
     while :
     do
@@ -71,8 +69,10 @@ function get_chart_meta_data() {
     done
 }
 
+# Downloads charts as PDF to local computer
 function download_chart() {
     echo "*** DEBUG: download_chart()"
+
     if [ ! -d "$parameter" ]; then
         mkdir $parameter
     fi
@@ -100,15 +100,14 @@ function download_chart() {
     if [ ! -d $subdir ]; then
         mkdir $subdir
     fi
-
     chart_url=$(echo $versioned_url"/"$date"-AIRAC"$local_file_name)
-
     cd $subdir
-        #wget -U "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" -O $local_chart_name $chart_url 
+        wget -U "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" -O $local_chart_name $chart_url 
     cd ../..
 
 }
 
+# Downloads chart metadata, and calls function to extract metadata
 function download_airport_charts() {
     echo "*** DEBUG: download_airport_charts()"
 
@@ -120,9 +119,10 @@ function download_airport_charts() {
 
 function get_current_version() {
     echo "***DEBUG get_current_version()"
+    base_url="https://ais.avinor.no/no/AIP/"
 
     version_number=$(curl -A "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" $base_url | grep -o 'Object moved to <a href="/no/AIP/View/[0-9]\{1,4\}' | awk -F / '{print $NF}')
-    versioned_url=$(echo $base_url$version$version_number)
+    versioned_url=$(echo $base_url"view/"$version_number)
     versioned_endpoint=$(echo $versioned_url"/history-no-NO.html")
 
     if test -d "$version_number"; then
@@ -132,20 +132,16 @@ function get_current_version() {
     fi
 }
 
+# This function gets meta files that contains the airport and chart info
 function get_meta_files() {
     echo "***DEBUG: get_meta_files()"
 
     date=$(curl -A "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" $versioned_endpoint | awk '/date"><a href="/ {
     match($0, /date"><a href="/); print substr($0, RSTART + 15, 10);
     }') 
-
     full_path=$(echo $versioned_url"/"$date"-AIRAC/html/eAIP/")
-
     ad_list=$(echo $full_path"EN-AD-0.6-no-NO.html")
-
     answer=$(curl -A "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" $ad_list | grep 'ENGM') 
-
-
     chart_list=$(curl -A "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" "$ad_list")
 }
 
