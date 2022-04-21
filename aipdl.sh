@@ -10,14 +10,18 @@ chart_name=""
 function get_airport_list() {
     echo "*** DEBUG: get_airport_list()"
 
-    wget -U "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" "$ad_list"
+    local_airport_list="$version_number"
+    local_airport_list+="_AD_LIST"
+    echo "local_airport_list = $local_airport_list"
+
+    wget -U "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" -O $local_airport_list $ad_list 
 
     counter=1
     return_string="-"
 
     while :
     do
-        declare -a "start_string=(xmllint --html --xpath \"string(//html/body/div/div/div/div[2]/div[$counter]/h3/a/@href)\" EN-AD-0.6-no-NO.html)"
+        declare -a "start_string=(xmllint --html --xpath \"string(//html/body/div/div/div/div[2]/div[$counter]/h3/a/@href)\" $local_airport_list)"
         #echo "start string = ${start_string[@]}"
         return_string=$(${start_string[@]})
         #echo "return string = $return_string"
@@ -44,54 +48,34 @@ function get_airport_url() {
     done
 }
 
-function get_chart_name() {
-    echo "*** DEBUG: get_chart_name()"
-    chart_name=$(xmllint --html --xpath "$chart_name_params" "EN-AD-2.$parameter-no-NO.html" 2> /dev/null)
-    #echo "return_string=$return_string"
-}
 
-function get_chart_code() {
-    echo "*** DEBUG: get_chart_code()"
-    chart_code=""
-    chart_code=$(xmllint --html --xpath "$chart_code_params" "EN-AD-2.$parameter-no-NO.html" 2> /dev/null)
-}
-
-function get_chart_filename() {
-    echo "*** DEBUG: get_chart_filename()"
-    chart_filename=""
-    chart_filename=$(xmllint --html --xpath "$chart_filename_params" "EN-AD-2.$parameter-no-NO.html" 2> /dev/null)
-}
-
-
-function get_ground_charts() {
-    echo "*** DEBUG: get_ground_charts()"
+function get_chart_meta_data() {
+    echo "*** DEBUG: get_chart_meta_data()"
     index=1
     while :
     do
-        echo "*** DEBUG: getting chart name"
         chart_name_params="string(//html/body/div[2]/div/div[24]/table/tbody/tr[$index]/td[1]/p)"
-        get_chart_name $chart_name_params
+        chart_name=$(xmllint --html --xpath "$chart_name_params" $remote_chart_list 2> /dev/null)
+        #get_chart_name $chart_name_params
 
-        echo "*** DEBUG: getting chart code"
         chart_code_params="string(//html/body/div[2]/div/div[24]/table/tbody/tr[$index]/td[2]/a)"
-        get_chart_code $chart_code_params
+        chart_code=$(xmllint --html --xpath "$chart_code_params" $remote_chart_list 2> /dev/null)
+        #get_chart_code $chart_code_params
 
-        echo "*** DEBUG: getting chart filename"
         chart_filename_params="string(//html/body/div[2]/div/div[24]/table/tbody/tr[$index]/td[2]/a/@href)"
-        get_chart_filename $chart_filename_params
+        chart_filename=$(xmllint --html --xpath "$chart_filename_params" $remote_chart_list 2> /dev/null)
+        #get_chart_filename $chart_filename_params
 
         index=$(( $index + 1 ))
 
-        echo "chart_name = $chart_name"
         if [ "$chart_name" == "" ] 
         then
-            echo "*** DEBUG: empty name, breaking"
             break
         else
-            echo "Airport found!"
-            echo "chart name = $chart_name"
-            echo "chart code = $chart_code"
-            echo "chart fn   = $chart_filename"
+            #echo "Airport found!"
+            #echo "chart name = $chart_name"
+            #echo "chart code = $chart_code"
+            #echo "chart fn   = $chart_filename"
             download_chart $chart_name $chart_code $chart_filename
             #airport_list+=($return_string)
         fi
@@ -118,15 +102,15 @@ function download_chart() {
         subdir="Area"
     fi
 
-    echo "Subdir = $subdir"
+    #echo "Subdir = $subdir"
 
     local_file_name=${chart_filename:5}
-    echo "local_file_name = $local_file_name"
+    #echo "local_file_name = $local_file_name"
     local_chart_name=$(echo $chart_name | awk '{$1=$1;print}')
     local_chart_name="$local_chart_name.pdf"
     local_chart_name="${local_chart_name// /_}"
     local_chart_name="${local_chart_name////_}"
-    echo "local_chart_name = $local_chart_name"
+    #echo "local_chart_name = $local_chart_name"
 
     cd $parameter
     if [ ! -d $subdir ]; then
@@ -135,10 +119,10 @@ function download_chart() {
 
     chart_url=$(echo $versioned_url"/"$date"-AIRAC"$local_file_name)
 
-    echo "chart url = $chart_url"
+    #echo "chart url = $chart_url"
 
     cd $subdir
-        wget -U "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" -O $local_chart_name $chart_url 
+        #wget -U "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" -O $local_chart_name $chart_url 
     cd ../..
 
 }
@@ -146,10 +130,10 @@ function download_chart() {
 function download_airport_charts() {
     echo "*** DEBUG: download_airport_charts()"
     get_airport_url $1
-    echo "Airport url = $airport_url"
-    wget -U "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" "$airport_url"
+    #echo "Airport url = $airport_url"
+    wget -U "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" "$airport_url" 
 
-    get_ground_charts 
+    get_chart_meta_data
 }
 
 
@@ -161,7 +145,8 @@ function get_current_version() {
 
     versioned_endpoint=$(echo $versioned_url"/history-no-NO.html")
 
-    echo "version_number = $version_number"
+    # echo "version_number = $version_number"
+
 
     if test -d "$version_number"; then
         echo "File exists!"
@@ -176,22 +161,24 @@ function get_meta_files() {
     match($0, /date"><a href="/); print substr($0, RSTART + 15, 10);
     }') 
 
-    echo $date
+    #echo $date
 
     full_path=$(echo $versioned_url"/"$date"-AIRAC/html/eAIP/")
 
-    echo $full_path
+    #echo $full_path
 
 
     ad_list=$(echo $full_path"EN-AD-0.6-no-NO.html")
 
-    echo "ad_list = $ad_list"
+    #echo "ad_list = $ad_list"
 
     answer=$(curl -A "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" $ad_list | grep 'ENGM') 
 
     #echo $answer
 
     chart_list=$(curl -A "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" "$ad_list")
+
+    #echo "CHART LIST = $chart_list"
 
 }
 
@@ -209,9 +196,11 @@ then
         echo "Incorrect syntax"
     fi
 else
+    remote_chart_list="EN-AD-2.$parameter-no-NO.html"
     get_current_version
     get_meta_files
     download_airport_charts $1
+    rm $remote_chart_list
 fi
 
 
