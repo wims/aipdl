@@ -149,14 +149,23 @@ function get_meta_files() {
     chart_list=$(curl -A "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" "$ad_list")
 }
 
+function usage() {
+    echo "aipdl - A chart downloader"
+    echo ""
+    echo "Usage:"
+    echo "  aipdl [options] <ICAO CODE>"
+    echo ""
+    echo "  ICAO CODE: The airports ICAO code"
+}
 
 # CHECK FOR COMMAND LINE OPTIONS
 
-if [[ "$1" == --* ]]
-then
+if [[ "$1" == "" ]]; then
+    usage
+    exit
+elif [[ "$1" == --* ]]; then
     echo "Found option"
-    if [ "$1" == "--find" ]
-    then
+    if [ "$1" == "--find" ]; then
         get_airport_list
     else
         echo "Incorrect syntax"
