@@ -10,7 +10,7 @@ chart_name=""
 function get_airport_list() {
     echo "*** DEBUG: get_airport_list()"
 
-    wget -U "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" "https://ais.avinor.no/no/AIP/view/112/2022-03-24-AIRAC/html/eAIP/EN-AD-0.6-no-NO.html"
+    wget -U "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" "$ad_list"
 
     counter=1
     return_string="-"
@@ -36,7 +36,7 @@ function get_airport_url() {
     get_airport_list
     airport_url=""
     for airport in ${airport_list[@]}; do
-        if [[ "$airport" =~ "$1" ]] 
+        if [[ "$airport" =~ "$parameter" ]] 
         then
             airport_url="${full_path}EN-AD-2.$1-no-NO.html#AD-2.$1"
             return 0
@@ -46,20 +46,20 @@ function get_airport_url() {
 
 function get_chart_name() {
     echo "*** DEBUG: get_chart_name()"
-    chart_name=$(xmllint --html --xpath "$chart_name_params" EN-AD-2.ENGM-no-NO.html 2> /dev/null)
+    chart_name=$(xmllint --html --xpath "$chart_name_params" "EN-AD-2.$parameter-no-NO.html" 2> /dev/null)
     #echo "return_string=$return_string"
 }
 
 function get_chart_code() {
     echo "*** DEBUG: get_chart_code()"
     chart_code=""
-    chart_code=$(xmllint --html --xpath "$chart_code_params" EN-AD-2.ENGM-no-NO.html 2> /dev/null)
+    chart_code=$(xmllint --html --xpath "$chart_code_params" "EN-AD-2.$parameter-no-NO.html" 2> /dev/null)
 }
 
 function get_chart_filename() {
     echo "*** DEBUG: get_chart_filename()"
     chart_filename=""
-    chart_filename=$(xmllint --html --xpath "$chart_filename_params" EN-AD-2.ENGM-no-NO.html 2> /dev/null)
+    chart_filename=$(xmllint --html --xpath "$chart_filename_params" "EN-AD-2.$parameter-no-NO.html" )
 }
 
 
@@ -68,20 +68,27 @@ function get_ground_charts() {
     index=1
     while :
     do
-        chart_name_params="string(//html/body/div[2]/div[24]/table/tbody/tr[$index]/td[1]/p)"
+        echo "*** DEBUG: getting chart name"
+        chart_name_params="string(//html/body/div[2]/div/div[24]/table/tbody/tr[$index]/td[1]/p)"
         get_chart_name $chart_name_params
 
-        chart_code_params="string(//html/body/div[2]/div[24]/table/tbody/tr[$index]/td[2]/a)"
+        echo "*** DEBUG: getting chart code"
+        chart_code_params="string(//html/body/div[2]/div/div[24]/table/tbody/tr[$index]/td[2]/a)"
         get_chart_code $chart_code_params
 
-        chart_filename_params="string(//html/body/div[2]/div[24]/table/tbody/tr[$index]/td[2]/a/@href)"
+        echo "*** DEBUG: getting chart filename"
+        chart_filename_params="string(//html/body/div[2]/div/div[24]/table/tbody/tr[$index]/td[2]/a/@href)"
         get_chart_filename $chart_filename_params
 
         index=$(( $index + 1 ))
+
+        echo "chart_name = $chart_name"
         if [ "$chart_name" == "" ] 
-        then 
+        then
+            echo "*** DEBUG: empty name, breaking"
             break
         else
+            echo "Airport found!"
             echo "chart name = $chart_name"
             echo "chart code = $chart_code"
             echo "chart fn   = $chart_filename"
@@ -118,6 +125,8 @@ function download_chart() {
     local_file_name=${chart_filename:5}
     echo "local_file_name = $local_file_name"
     local_chart_name=$(echo $chart_name | awk '{$1=$1;print}')
+    local_chart_name="$local_chart_name.pdf"
+    local_chart_name="${local_chart_name// /_}"
     echo "local_chart_name = $local_chart_name"
 
     cd $parameter
@@ -130,7 +139,7 @@ function download_chart() {
     echo "chart url = $chart_url"
 
     cd $subdir
-        wget -U "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" -O $local_chart_name $chart_url
+        wget -U "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" -O $local_chart_name $chart_url 
     cd ../..
 
 }
@@ -177,13 +186,13 @@ function get_meta_files() {
 
     ad_list=$(echo $full_path"EN-AD-0.6-no-NO.html")
 
-    echo $ad_list
+    echo "ad_list = $ad_list"
 
     answer=$(curl -A "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" $ad_list | grep 'ENGM') 
 
     #echo $answer
 
-    chart_list=$(curl -A "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" https://ais.avinor.no/no/AIP/view/112/2022-03-24-AIRAC/html/eAIP/EN-AD-2.ENAT-no-NO.html#ENAT-AD-2.24)
+    chart_list=$(curl -A "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0" "$ad_list")
 
 }
 
