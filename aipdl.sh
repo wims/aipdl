@@ -62,10 +62,31 @@ function ICAO_to_text() {
     echo "*** DEBUG: ICAO_to_text()"
 
     get_airport_list
-    for airport in ${airport_list[@]}; do
-        if [[ "$airport" =~ "$ICAO_code" ]]; then
-            echo "ICAO code found!"
-            echo "airport = $airport"
+    echo "local_airport_list = $local_airport_list"
+    index=1
+
+    while : 
+    do
+        params="string(//div[@id='AD-0.6']/div[2]/div[$index]/h3/a/@href)"
+        airport_icao=$(xmllint --html --xpath "$params" $local_airport_list)
+
+        echo "airport icao = ${airport_icao:16:4}"
+        if [[ $ICAO_code == ${airport_icao:16:4} ]]; then
+            params="string(//div[@id='AD-0.6']/div[2]/div[$index]/h3/a/span/span)"
+            city_name=$(xmllint --html --xpath "$params" $local_airport_list)
+
+            echo "city name = $city_name"
+        fi
+
+        # params="string(//div[@id='AD-0.6']/div[2]/div[$index]/h3/a/span/span)"
+        # city_name=$(xmllint --html --xpath "$params" $local_airport_list)
+
+        # echo "city name = $city_name"
+
+        index=$(( $index + 1 ))
+
+        if [ "$airport_icao" == "" ] 
+        then
             break
         fi
     done
