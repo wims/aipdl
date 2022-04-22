@@ -1,9 +1,12 @@
 #!/bin/bash 
+
+# defining variables here is not needed, but I like to keep them
+# there for the sake of visibility
 parameter=$1
 airport_list=()
 ICAO_code=""
 airport_name=""
-
+airport_city_name=""
 
 
 
@@ -28,8 +31,7 @@ function get_airport_list() {
     do
         params="string(//html/body/div/div/div/div[2]/div[$counter]/h3/a/@href)"
         airport_object=$(xmllint --html --xpath "$params" $local_airport_list 2> /dev/null)
-        #declare -a "start_string=(xmllint --html --xpath \"string(//html/body/div/div/div/div[2]/div[$counter]/h3/a/@href)\" $local_airport_list)"
-        # return_string=$(${start_string[@]})
+
         counter=$(( $counter + 1 ))
         if [ "$airport_object" == "" ] 
         then 
@@ -62,7 +64,6 @@ function ICAO_to_text() {
     echo "*** DEBUG: ICAO_to_text()"
 
     get_airport_list
-    echo "local_airport_list = $local_airport_list"
     index=1
 
     while : 
@@ -70,12 +71,16 @@ function ICAO_to_text() {
         params="string(//div[@id='AD-0.6']/div[2]/div[$index]/h3/a/@href)"
         airport_icao=$(xmllint --html --xpath "$params" $local_airport_list)
 
-        echo "airport icao = ${airport_icao:16:4}"
         if [[ $ICAO_code == ${airport_icao:16:4} ]]; then
             params="string(//div[@id='AD-0.6']/div[2]/div[$index]/h3/a/span/span)"
-            city_name=$(xmllint --html --xpath "$params" $local_airport_list)
+            airport_city_name=$(xmllint --html --xpath "$params" $local_airport_list)
 
-            echo "city name = $city_name"
+            params="string(//div[@id='AD-0.6']/div[2]/div[$index]/h3/a/span/span[4])"
+            airport_name=$(xmllint --html --xpath "$params" $local_airport_list)
+
+            echo "airport_city_name=$airport_city_name"
+            echo "airport_name=$airport_name"
+            return 1
         fi
 
         # params="string(//div[@id='AD-0.6']/div[2]/div[$index]/h3/a/span/span)"
